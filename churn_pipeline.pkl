@@ -1,1 +1,47 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# SHAP Explainability for Churn Prediction Model"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import shap\n",
+    "import joblib\n",
+    "import pandas as pd\n",
+    "import matplotlib.pyplot as plt\n",
+    "\n",
+    "# Load model\n",
+    "model = joblib.load(\"churn_pipeline.pkl\")\n",
+    "\n",
+    "# Load your dataset here\n",
+    "# df = pd.read_csv(\"Telco-Customer-Churn.csv\")\n",
+    "\n",
+    "# IMPORTANT: Replace with your actual dataframe sample\n",
+    "X_sample = pd.DataFrame()\n",
+    "\n",
+    "explainer = shap.Explainer(model.named_steps['clf'])\n",
+    "shap_values = explainer.shap_values(X_sample)\n",
+    "\n",
+    "shap.summary_plot(shap_values, X_sample)"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 2
+}
 
