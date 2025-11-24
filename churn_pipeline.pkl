@@ -1,47 +1,59 @@
-{
- "cells": [
-  {
-   "cell_type": "markdown",
-   "metadata": {},
-   "source": [
-    "# SHAP Explainability for Churn Prediction Model"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "import shap\n",
-    "import joblib\n",
-    "import pandas as pd\n",
-    "import matplotlib.pyplot as plt\n",
-    "\n",
-    "# Load model\n",
-    "model = joblib.load(\"churn_pipeline.pkl\")\n",
-    "\n",
-    "# Load your dataset here\n",
-    "# df = pd.read_csv(\"Telco-Customer-Churn.csv\")\n",
-    "\n",
-    "# IMPORTANT: Replace with your actual dataframe sample\n",
-    "X_sample = pd.DataFrame()\n",
-    "\n",
-    "explainer = shap.Explainer(model.named_steps['clf'])\n",
-    "shap_values = explainer.shap_values(X_sample)\n",
-    "\n",
-    "shap.summary_plot(shap_values, X_sample)"
-   ]
-  }
- ],
- "metadata": {
-  "kernelspec": {
-   "display_name": "Python 3",
-   "language": "python",
-   "name": "python3"
-  }
- },
- "nbformat": 4,
- "nbformat_minor": 2
-}
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.ensemble import RandomForestClassifier
+import pickle
 
+# ------------------------------
+# Load Dataset
+# ------------------------------
+df = pd.read_csv("churn.csv")   # ensure your dataset name
+
+df["TotalCharges"] = pd.to_numeric(df["TotalCharges"], errors="coerce")
+df.fillna(0, inplace=True)
+
+# ------------------------------
+# Features & Target
+# ------------------------------
+X = df.drop("Churn", axis=1)
+y = df["Churn"].replace({"Yes": 1, "No": 0})
+
+categorical = X.select_dtypes(include="object").columns
+numeric = X.select_dtypes(include="number").columns
+
+# ------------------------------
+# Preprocessing Pipeline
+# ------------------------------
+preprocess = ColumnTransformer(
+    transformers=[
+        ("num", StandardScaler(), numeric),
+        ("cat", OneHotEncoder(handle_unknown="ignore"), categorical)
+    ]
+)
+
+# ------------------------------
+# Final Pipeline
+# ------------------------------
+pipeline = Pipeline(steps=[
+    ("preprocess", preprocess),
+    ("model", RandomForestClassifier(n_estimators=200))
+])
+
+# ------------------------------
+# Train Test Split
+# ------------------------------
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+pipeline.fit(X_train, y_train)
+
+# ------------------------------
+# Save Model
+# ------------------------------
+with open("churn_pipeline.pkl", "wb") as f:
+    pickle.dump(pipeline, f)
+
+print("Model training complete. churn_pipeline.pkl created.")
