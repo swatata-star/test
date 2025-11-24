@@ -1,9 +1,6 @@
-# --- INSTALL COMPATIBLE VERSIONS (MATCHES STREAMLIT CLOUD PYTHON 3.10) ---
-!pip install scikit-learn==1.2.2
-!pip install pandas==1.5.3
-!pip install numpy==1.23.5
+# Install exact versions Streamlit Cloud uses for python-3.10
+!pip install pandas==1.5.3 numpy==1.23.5 scikit-learn==1.2.2 joblib==1.2.0
 
-# --- IMPORTS ---
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -11,27 +8,22 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.ensemble import RandomForestClassifier
-import pickle
+import joblib
 
-# --- LOAD YOUR DATASET ---
-# Make sure your churn CSV is uploaded to Colab
-df = pd.read_csv("churn.csv")  # rename if needed
+# Load your dataset (make sure churn.csv is available)
+df = pd.read_csv("churn.csv")
 
-# --- CLEANING / PREPROCESSING ---
+# Clean data
 df["TotalCharges"] = pd.to_numeric(df["TotalCharges"], errors="coerce")
 df.fillna(0, inplace=True)
-
-# Convert target Yes/No to 1/0
 df["Churn"] = df["Churn"].replace({"Yes": 1, "No": 0})
 
 X = df.drop("Churn", axis=1)
 y = df["Churn"]
 
-# Identify categorical and numeric columns
 categorical = X.select_dtypes(include="object").columns
 numeric = X.select_dtypes(include="number").columns
 
-# --- BUILD PREPROCESSOR ---
 preprocess = ColumnTransformer(
     transformers=[
         ("num", StandardScaler(), numeric),
@@ -39,35 +31,19 @@ preprocess = ColumnTransformer(
     ]
 )
 
-# --- MODEL PIPELINE ---
 model = Pipeline(steps=[
     ("preprocess", preprocess),
-    ("clf", RandomForestClassifier(
-        n_estimators=200,
-        max_depth=None,
-        random_state=42
-    ))
+    ("clf", RandomForestClassifier(n_estimators=200, random_state=42))
 ])
 
-# --- SPLIT DATA ---
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42
 )
 
-# --- TRAIN ---
 model.fit(X_train, y_train)
 
-# --- EVALUATE ---
 print("Training Accuracy:", model.score(X_train, y_train))
 print("Test Accuracy:", model.score(X_test, y_test))
 
-# --- SAVE THE MODEL (Pickle) ---
-filename = "churn_pipeline.pkl"
-with open(filename, "wb") as f:
-    pickle.dump(model, f)
-
-print("Model saved successfully as churn_pipeline.pkl")
-
-# --- DOWNLOAD FILE IN COLAB ---
-from google.colab import files
-files.download("churn_pipeline.pkl")
+joblib.dump(model, "churn_pipeline.pkl")
+print("Model saved as churn_pipeline.pkl")
